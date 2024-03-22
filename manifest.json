@@ -1,0 +1,17 @@
+{
+    "name": "GameTimer",
+    "description": "Base Level game timer",
+    "version": "1.0",
+    "manifest_version": 3,
+    "permissions": ["scripting", "activeTab", "storage"],
+    "content_scripts": [
+      {
+        "matches": ["https://esco.basket.fi/taso/esco.php?otteluid=*&escosivu=ottelu"],
+        "js": ["contentScript.js"]
+      },
+      {
+        "matches": ["https://esco.basket.fi/taso/scoreboard.php?otteluid=*"],
+        "js": ["contentScriptBG.js"]
+      }
+    ]
+  }
