@@ -1,17 +1,27 @@
 
-
 let gameId = window.location.toString()
   .replace("https://esco.basket.fi/taso/esco.php?otteluid=", "")
   .replace("&escosivu=ottelu", "");
 console.log("gameId: "+gameId);
 
+//TODO: lue tämä pelin alustuksesta, löytyykö jostain sivulta?
+let readGameTime = "08:00";
+
 function insertAfter(referenceNode, newNode) {
     referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
 }
 
+function refreshGameTime(newTime) {
+  console.log("refreshGameTime: "+newTime);
+  document.getElementById('timeTD').innerText = newTime;
+  //Save to local storage
+  chrome.storage.sync.set({ time: newTime, gameId: gameId }).then(() => {
+    console.log("Value "+newTime+" is set");
+  });
+}
+
 async function readSavedGameTime() {
   //Read game time from storage if set when setting up the page
-  let readGameTime = "08:00";
   await chrome.storage.sync.get(["time", "gameId"]).then((result) => {
     if(result.gameId == gameId) {
       console.log(result.gameId+" : " + result.time);
@@ -61,14 +71,18 @@ function startTimer(duration, display) {
 
 const time = document.createElement("td");
 time.id = 'gametime';
+time.style.background = "black";
+time.style.width = '34%';
+time.style.margin = 'auto';
 
-const timeText = document.createElement('p');
-timeText.innerHTML = "<table><tr>"+ 
-    "<td id='timeTD' style='text-align:center;position:relative;vertical-align:middle'>99:99</td>" +
+const timeText = document.createElement('table');
+timeText.setAttribute('width', '100%');
+timeText.innerHTML = "<tr>"+
+    "<td id='timeTD' colspan='2' style='color:white;text-align:center;font-weight:bold;'>99:99</td>" +
     "</tr><tr>" +
-    "<td><button id='startBtn'>Start/Stop</button></td>" +
-    "<td><button id='resetBtn'>Reset</button></td>" +
-    "</tr></table>"
+    "<td style='width:100%;'><button id='startBtn' class='awesome' style='width:100%;'>Start/Stop</button></td>" +
+    "<td><button id='resetBtn' class='awesome'>Reset</button></td>" +
+    "</tr>"
 time.appendChild(timeText);
 
 const koti = document.getElementById("kotitop");
@@ -77,11 +91,35 @@ if (koti !== null) {
   insertAfter(koti, time);
   document.getElementById("vierastop").style.width = "33%";
 
+  document.getElementById('vaihdajakso_0').addEventListener('click', function () {
+    refreshGameTime("08:00");
+  });
+  document.getElementById('vaihdajakso_1').addEventListener('click', function () {
+    refreshGameTime("08:00");
+  });
+  document.getElementById('vaihdajakso_2').addEventListener('click', function () {
+    refreshGameTime("08:00");
+  });
+  document.getElementById('vaihdajakso_3').addEventListener('click', function () {
+    refreshGameTime("08:00");
+  });
 
   document.getElementById('resetBtn').addEventListener('click', function () {
     let current = document.getElementById('timeTD').innerText;
     let retVal = prompt("Anna uusi aika (min:sec): ", current);
-    document.getElementById('timeTD').innerText = retVal;
+
+    //TODO: minuutit eivät voi olla isompia kuin annettu peliaika!
+    var pattern = /^\d{2}:([0-5][0-9])$$/;
+    const afterReg = pattern.exec(retVal);
+    console.log("after reg "+afterReg+ " retVal "+retVal);
+
+    if(retVal != null && afterReg != null) {
+      console.log("vaihda aika resetin jälkeen, aika validoituna!");
+      document.getElementById('timeTD').innerText = retVal;
+      chrome.storage.sync.set({ "time" : document.getElementById('timeTD').innerText }).then(() => {
+        console.log("Value "+document.getElementById('timeTD').innerText+" is set");
+      });
+    }
   });
 
   document.getElementById('timeTD').addEventListener("change", (event) => {
@@ -89,7 +127,6 @@ if (koti !== null) {
     chrome.storage.sync.set({ "time" : document.getElementById('timeTD').innerText }).then(() => {
         console.log("Value "+document.getElementById('timeTD').innerText+" is set");
       });
-
   });
 
   document.addEventListener('readystatechange', async event => {
